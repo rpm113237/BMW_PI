@@ -49,12 +49,8 @@ dis_h = 1000
 dis_w = 1000
 # NOFRAME removes frame.
 DISPLAYSURF = pygame.display.set_mode((dis_w,dis_h), NOFRAME, 32)
-# NOFRAME--caption doesn't show
-# pygame.display.set_caption('BMW Console Drawing')
 
 # Set up feature locations
-#linewidth = 2       # NA? horizontal line--in  "background" image.
-#circwidth = 5       # NA? comes with background image?
 
 SpeedoLoc = (dis_w / 2 , int(dis_h *0.55))
 BatDistLoc = (dis_w/2, int(dis_h * 0.85))
