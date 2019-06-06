@@ -1,6 +1,6 @@
 
 #!/usr/bin/python3
-import pygame, sys, time
+import pygame, sys, time, threading
 from pygame.locals import *
 import pygame.gfxdraw
 from subprocess import run
@@ -19,6 +19,7 @@ def message_display(text, fclr=(255, 0, 0), bclr=(128, 128, 128), font=None, fsi
     DISPLAYSURF.blit(ren, (loc[0]-(size[0]/2), (loc[1]-size[1])))
 
 def evenodd(eo):
+    #replace by (eo+1) %2; this is silly
     if eo >0:
         eo = 0
         return eo
@@ -35,6 +36,7 @@ def fakespd(oldspd, tmint, acc):
     return oldspd %150
     # return (pygame.time.get_ticks()/1000) % 150
 
+# GPIO setup
 ledlt= LED(17)
 ledrt = LED(27)
 buttonlt = Button(10)
@@ -51,28 +53,27 @@ DISPLAYSURF = pygame.display.set_mode((dis_w,dis_h), NOFRAME, 32)
 # pygame.display.set_caption('BMW Console Drawing')
 
 # Set up feature locations
-linewidth = 2       # NA? horizontal line--in  "background" image.
-circwidth = 5       # NA? comes with background image?
+#linewidth = 2       # NA? horizontal line--in  "background" image.
+#circwidth = 5       # NA? comes with background image?
 
 SpeedoLoc = (dis_w / 2 , int(dis_h *0.55))
 BatDistLoc = (dis_w/2, int(dis_h * 0.85))
 BatTextLoc = (dis_w/2, int(dis_h * 0.9))
 
 # arrows
+FLASH_RATE = 2 # FOR TURN SIGS; PER SEC
 ArrowLtXPos = int(0.25 * dis_w)
 ArrowRtXPos = int(0.75 * dis_w)
 ArrowYPos = int(0.75 * dis_h)
 ArrowH = int(0.065 * dis_h)
 ArrowW = int(0.065 * dis_w)
+TIME_MS = int( 1000/(((FLASH_RATE)/2)/2))
 
 # Charge Rectangle location
 ChgRectX = int(0.1*dis_w)
 ChgRectY = int(0.55*dis_h)
 ChRectH = int(0.05 * dis_h)
 ChgTextLoc = (int(0.5 *dis_w ), (ChgRectY + ChRectH + int(0.05*dis_h) ))
-
-
-
 
 # set up the colors  ?? Put a palette in place
 BLACK = (0, 0, 0)
@@ -85,33 +86,32 @@ GREY = (128,128,128)
 FUSCHIA = (255, 0, 255)  # fuschia
 
 # The background image.
-image  = pygame.image.load('/home/pi/Desktop/CSEDashDisplay_sq_1k.png')
+# image  = pygame.image.load('/home/pi/Desktop/CSEDashDisplay_sq_1k.png')
+image  = pygame.image.load('/home/pi/Desktop/NewBkGnd.png')
+
+
 
 # set up custom time event
 
 TIMEEVENT_1 = pygame.USEREVENT
-TIME_MS = 700   # ms to update screen--this will be turn signal On/Off
+# TIME_MS = 700   # ms to update screen--this will be turn signal On/Off
 
 ### inserts Time custom into the event queue @ TIME_MS
 ##pygame.time.set_timer(TIMEEVENT_1, TIME_MS)
 is_running = True
 eo = 0
 spdrdg = 0
-# init pygame
-# pygame.init()
 
 videoPath = "/home/pi/Desktop/BMW.mov"
 omx = run(["omxplayer",videoPath])
 
-##fakelt = 1
-##fakert = 1
 pygame.init()
-# inserts Time custom into the event queue @ TIME_MS
+
 pygame.time.set_timer(TIMEEVENT_1, TIME_MS)
 DISPLAYSURF.blit(image, (0, 0))
 pygame.display.update()
 
-# if the application is running
+# is_running is bailout
 while is_running:
     # gets events from the event queue
     for event in pygame.event.get():
@@ -119,6 +119,12 @@ while is_running:
         if event.type == pygame.QUIT:
             # stops the application
             is_running = False
+        
+        keys = pygame.key.get_pressed()
+        if keys[K_ESCAPE]:
+            # bail
+            is_running = False
+                    
 
         # captures the custom event 'TIMEEVENT_1'
         if event.type == TIMEEVENT_1:
@@ -154,54 +160,7 @@ while is_running:
 
 
 
-
 # finalizes Pygame
 pygame.quit()
 
 
-
-# run the game loop
-while True:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-    # message_display('Here!')
-    # pygame.display.update()
-    # time.sleep(1)
-    for i in range (150):
-        DISPLAYSURF.fill(GREY)
-        DISPLAYSURF.blit(image, (0, 0))
-        rad = ((90 * dis_h)/100)/2
-        # pygame.draw.circle(DISPLAYSURF, WHITE, (dis_w / 2, dis_h / 2), rad, 5)
-        # pygame.gfxdraw.filled_circle(DISPLAYSURF, dis_w / 2, dis_h / 2, rad, WHITE)
-        # pygame.gfxdraw.filled_circle(DISPLAYSURF, dis_w / 2, dis_h / 2, rad-5, GREY)
-        # pygame.gfxdraw.aacircle(DISPLAYSURF, dis_w / 2, dis_h / 2, rad-1, WHITE)
-        # pygame.gfxdraw.aacircle(DISPLAYSURF, dis_w / 2, dis_h / 2, rad-2, WHITE)
-
-        # pygame.draw.line(DISPLAYSURF, WHITE, (0, dis_h / 2), (dis_w, dis_h / 2), linewidth)
-        text1 = str(i)
-        tcol = RED
-        if i <= 55:
-            tcol = WHITE
-        message_display(text1, tcol, None, font="Arial Black", fsize=200, loc=SpeedoLoc)
-        message_display('100 Miles', WHITE, None, font="Times New Roman", fsize=40, loc=BatDistLoc)
-        message_display('Battery Range', WHITE, None, font="Times New Roman", fsize=20, loc=BatTextLoc)
-        # pygame.draw.polygon(DISPLAYSURF, GREEN, ((ArrowLtXPos,(ArrowYPos + ArrowH/2)), ((ArrowLtXPos-ArrowW), ArrowYPos), (ArrowLtXPos, (ArrowYPos - ArrowH/2))))
-        pygame.draw.polygon(DISPLAYSURF, GREEN, (
-        (ArrowLtXPos, (ArrowYPos + ArrowH / 2)), ((ArrowLtXPos - ArrowW), ArrowYPos),
-        (ArrowLtXPos, (ArrowYPos - ArrowH / 2))))
-        pygame.draw.polygon(DISPLAYSURF, GREEN, (
-        (ArrowRtXPos, (ArrowYPos + ArrowH / 2)), ((ArrowRtXPos + ArrowW), ArrowYPos),
-        (ArrowRtXPos, (ArrowYPos - ArrowH / 2))))
-        pygame.draw.rect(DISPLAYSURF, RED, (ChgRectX , ChgRectY, 300, ChRectH))
-        message_display('DisCharge', RED, None, font="Arial Black", fsize=20, loc=ChgTextLoc)
-        # message_display(text1, tcol)
-        # (dis_w / 2 - size[0] / 2), (dis_h / 2 - size[1])
-        if i == 53:
-            pygame.image.save(DISPLAYSURF, "screenshot53.jpeg")
-        if i == 113:
-            pygame.image.save(DISPLAYSURF, "screenshot113.jpeg")
-        time.sleep(.2)
-
-        pygame.display.update()
