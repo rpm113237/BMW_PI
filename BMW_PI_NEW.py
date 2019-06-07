@@ -20,13 +20,6 @@ def message_display(text, fclr=(255, 0, 0), bclr=(128, 128, 128), font=None, fsi
     # DISPLAYSURF.blit(ren, ((dis_w/2-size[0]/2), (dis_h/2 - size[1]) ))
     DISPLAYSURF.blit(ren, (loc[0]-(size[0]/2), (loc[1]-size[1])))
 
-def evenodd(eo):
-    #replace by (eo+1) %2; this is silly
-    if eo >0:
-        eo = 0
-        return eo
-    return eo + 1
-
 
 def fakespd(tmint):
 # replace by reading actual speed
