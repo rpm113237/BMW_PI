@@ -9,10 +9,8 @@ from time import sleep
 from threading import Thread
 
 
-
 def message_display(text, fclr=(255, 0, 0), bclr=(128, 128, 128), font=None, fsize=20, loc=(0, 0)):
     AA = 1  # Anti Alias
-
     # no AA, no transparancy, normal
     sys_font = pygame.font.SysFont(font, fsize)
     size = sys_font.size(text)
